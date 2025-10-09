@@ -1,0 +1,6 @@
+defaults:
+  - scene_filter: navtrain_empty
+
+scene_filter_path: /home/liush/iPad/navsim/planning/script/config/common/train_test_split/scene_filter/navdebug.msgpack
+
+data_split: trainval

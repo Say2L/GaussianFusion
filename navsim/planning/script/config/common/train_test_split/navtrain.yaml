@@ -1,0 +1,6 @@
+defaults:
+  - scene_filter: navtrain_empty
+
+scene_filter_path: navsim/planning/script/config/common/train_test_split/scene_filter/navtrain.msgpack
+
+data_split: trainval
