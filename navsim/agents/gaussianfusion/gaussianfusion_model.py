@@ -117,7 +117,7 @@ class GaussianFusionModel(nn.Module):
         
         proposal_list = get_proposal_list(gaussian_list)
         proposals = proposal_list[-1]
-        proposal_feature = gaussian_list[-2].features  # b, g, c
+        proposal_feature = gaussian_list[-1].features  # b, g, c
 
         pred_logit = self._scorer(proposals, proposal_feature)
         return {
