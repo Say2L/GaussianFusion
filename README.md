@@ -97,7 +97,7 @@ bash ./scripts/evaluation/run_gaussianfusion.sh
 
 ## 📜 Citation
 
-If you use GaussianFusion in your research, please cite:
+If any part of our paper or code is helpful to your research, please consider citing our work 📝 and give us a star ⭐. Thanks for your support!
 
 ```bibtex
 @article{liu2025gaussianfusion,
