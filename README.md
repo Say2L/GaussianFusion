@@ -77,7 +77,22 @@ Extensive evaluations on both open-loop (NAVSIM) and closed-loop (Bench2Drive) b
 - [Getting started from NAVSIM environment preparation](https://github.com/autonomousvision/navsim?tab=readme-ov-file#getting-started-)
 - [Preparation of GaussianFusion environment](docs/install.md)
 
-### 2. Training
+### 2. Dataset Caching
+
+Dataset cache for training.
+
+```bash
+bash ./scripts/training/run_train_metric_cache.sh
+bash ./scripts/training/run_dataset_cache.sh
+```
+
+Metric cache for evaluation.
+
+```bash
+bash ./scripts/evaluation/run_metric_caching.sh
+```
+
+### 3. Training
 
 Before starting training, ensure that the dataset cache is already prepared and the path settings are correct.
 
@@ -85,7 +100,7 @@ Before starting training, ensure that the dataset cache is already prepared and 
 bash ./scripts/training/run_gaussianfusion.sh 
 ```
 
-### 3. Evaluation
+### 4. Evaluation
 
 Before starting evaluation, ensure that the metric cache is already prepared and the path of pt file is correct.
 
