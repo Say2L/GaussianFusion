@@ -19,8 +19,6 @@ from navsim.common.dataclasses import SensorConfig
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionTargetBuilder
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionFeatureBuilder
 from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR
-from .score_module.compute_b2d_score import compute_corners_torch
-from navsim.agents.transfuser.transfuser_loss import _agent_loss
 from navsim.agents.gaussianfusion.gaussianfusion_loss import _bev_occ_loss
 from navsim.agents.gaussianfusion.modules.scheduler import WarmupCosLR
 from omegaconf import DictConfig, OmegaConf, open_dict
@@ -55,7 +53,7 @@ class GaussianFusionAgent(AbstractAgent):
         self._lr = lr
         self._checkpoint_path = checkpoint_path
 
-        cache_data = False  # Whether to use cached data only
+        cache_data = config.get("cache_data", False)  # Whether to use cached data only
 
         if not cache_data:
             # Initialize the main GaussianFusion model

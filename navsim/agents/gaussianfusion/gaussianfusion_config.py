@@ -16,7 +16,8 @@ class GaussianFusionConfig:
     score_num: int = 6
     point_cloud_range = [-32, -32, -2.0, 32, 32, 6.0]
     num_points_in_pillar: int = 4
-
+    num_learnable_pts: int = 0
+    
     half_length: float = 2.588 + 0.25 #small buffer for safety
     half_width: float = 1.1485 + 0.1
     rear_axle_to_center: float = 1.461

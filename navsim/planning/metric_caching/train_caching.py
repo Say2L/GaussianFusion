@@ -7,7 +7,7 @@ import uuid
 
 from hydra.utils import instantiate
 from omegaconf import DictConfig
-
+import msgpack
 from nuplan.planning.utils.multithreading.worker_pool import WorkerPool
 from nuplan.planning.utils.multithreading.worker_utils import worker_map
 from nuplan.planning.training.experiments.cache_metadata_entry import (
@@ -23,7 +23,10 @@ from navsim.common.dataclasses import SensorConfig, Scene
 
 logger = logging.getLogger(__name__)
 
-
+def load_msgpack(file):
+    with open(file, "rb") as f:
+        return msgpack.unpackb(f.read(), raw=False)
+    
 def cache_scenarios(args: List[Dict[str, Union[List[str], DictConfig]]]) -> List[CacheResult]:
     """
     Performs the caching of scenario DB files in parallel.
@@ -120,12 +123,14 @@ def cache_data(cfg: DictConfig, worker: WorkerPool) -> None:
     """
     assert cfg.cache.cache_path is not None, f"Cache path cannot be None when caching, got {cfg.cache.cache_path}"
 
+    scene_filter_cfg = load_msgpack(cfg.train_test_split.scene_filter_path)
+    
     # Extract scenes based on scene-loader to know which tokens to distribute across workers
     # TODO: infer the tokens per log from metadata, to not have to load metric cache and scenes here
     scene_loader = SceneLoader(
         sensor_blobs_path=None,
         data_path=Path(cfg.navsim_log_path),
-        scene_filter=instantiate(cfg.train_test_split.scene_filter),
+        scene_filter=instantiate(scene_filter_cfg),
         sensor_config=SensorConfig.build_no_sensors(),
     )
 

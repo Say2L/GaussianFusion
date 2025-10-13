@@ -7,8 +7,6 @@ class Scorer(nn.Module):
     def __init__(self, config: GaussianFusionConfig):
         super().__init__()
 
-        self.b2d=config.b2d
-
         self.proposal_num = config.proposal_num
         self.score_num = config.score_num
 
