@@ -10,14 +10,15 @@ import pickle
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-from navsim.agents.gaussianfusion.gaussianfusion_model import GaussianFusionModel
 from navsim.agents.abstract_agent import AbstractAgent
 from navsim.planning.training.dataset import load_feature_target_from_pickle
 from pytorch_lightning.callbacks import ModelCheckpoint
 from navsim.common.dataloader import MetricCacheLoader
 from navsim.common.dataclasses import SensorConfig
+from navsim.agents.gaussianfusion.gaussianfusion_model import GaussianFusionModel
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionTargetBuilder
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionFeatureBuilder
+from navsim.agents.gaussianfusion.gaussianfusion_config import GaussianFusionConfig
 from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR
 from navsim.agents.gaussianfusion.gaussianfusion_loss import _bev_occ_loss
 from navsim.agents.gaussianfusion.modules.scheduler import WarmupCosLR
@@ -36,7 +37,7 @@ def build_from_configs(obj, cfg: DictConfig, **kwargs):
 class GaussianFusionAgent(AbstractAgent):    
     def __init__(
             self,
-            config,
+            config: GaussianFusionConfig,
             lr: float,
             checkpoint_path: str = None,
     ):
@@ -53,7 +54,7 @@ class GaussianFusionAgent(AbstractAgent):
         self._lr = lr
         self._checkpoint_path = checkpoint_path
 
-        cache_data = config.get("cache_data", False)  # Whether to use cached data only
+        cache_data = config.cache_data  # Whether to use cached data only
 
         if not cache_data:
             # Initialize the main GaussianFusion model

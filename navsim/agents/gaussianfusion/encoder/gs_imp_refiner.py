@@ -37,10 +37,10 @@ class GaussianImpRefiner(nn.Module):
 
         self.bev_pos_encoding = LearnedPositionalEncoding(num_feats=d_model // 2, row_num_embed=self.proposal_num,
                                                              col_num_embed=self.pose_num)
-        self.gs_pos_encoding = nn.Sequential(
-                                            *linear_relu_ln(d_model, 1, 1, d_model),
-                                            nn.Linear(d_model, d_model),
-                                        )
+        # self.gs_pos_encoding = nn.Sequential(
+        #                                     *linear_relu_ln(d_model, 1, 1, d_model),
+        #                                     nn.Linear(d_model, d_model),
+        #                                 )
         
         self.bev_decoder = BEVFormerEncoder(
             embed_dims=d_model,

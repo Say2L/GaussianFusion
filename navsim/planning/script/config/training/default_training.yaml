@@ -16,15 +16,15 @@ defaults:
 
 train_val_test_log_split_path: navsim/planning/script/config/training/default_train_val_test_log_split.msgpack
 split: trainval
-cache_path: '' #${oc.env:NAVSIM_EXP_ROOT}/navsim_cache
-use_cache_without_dataset: false # load the training samples from the cache. scene-filter will be ignored
+cache_path: ${oc.env:NAVSIM_EXP_ROOT}/navsim_cache
+use_cache_without_dataset: true # load the training samples from the cache. scene-filter will be ignored
 force_cache_computation: false
 experiment_name: navsim
 seed: 0 
 
 dataloader:
   params:
-    batch_size: 8  #number of samples per batch
+    batch_size: 16  #number of samples per batch
     num_workers: 4  # number of workers for data loading
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 4  # number of samples loaded in advance by each worker

@@ -9,6 +9,8 @@ from nuplan.common.maps.abstract_map import SemanticMapLayer
 
 @dataclass
 class GaussianFusionConfig:
+    cache_data: bool = False
+
     refiner_num: int = 4
     exp_only: bool = False
 
@@ -17,7 +19,7 @@ class GaussianFusionConfig:
     point_cloud_range = [-32, -32, -2.0, 32, 32, 6.0]
     num_points_in_pillar: int = 4
     num_learnable_pts: int = 0
-    
+
     half_length: float = 2.588 + 0.25 #small buffer for safety
     half_width: float = 1.1485 + 0.1
     rear_axle_to_center: float = 1.461
@@ -111,8 +113,10 @@ class GaussianFusionConfig:
     num_bev_layers: int=1
     
     # loss weights
+    prev_weight: float = 0.1
     trajectory_weight: float = 1.
-    final_score_weight: int = 1.
+    final_score_weight: float = 1.
+    sub_score_weight: float = 0.
     bev_semantic_weight: float = 1.
 
     #others

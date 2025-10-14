@@ -23,12 +23,14 @@ class GaussianFusionModel(nn.Module):
 
         self.refiner_num = config.refiner_num
         
-        exp_refiner = GaussianRefiner(config, refiner_type='exp')
-        self._exp_gaussian_refiners = nn.ModuleList([exp_refiner for _ in range(self.refiner_num)])
+        self._exp_gaussian_refiners = nn.ModuleList([
+            GaussianRefiner(config, refiner_type='exp') for _ in range(self.refiner_num)
+            ])
 
         if not self.exp_only:
-            imp_refiner = GaussianRefiner(config, refiner_type='imp')
-            self._imp_gaussian_refiners = nn.ModuleList([imp_refiner for _ in range(self.refiner_num)])
+            self._imp_gaussian_refiners = nn.ModuleList([
+                GaussianRefiner(config, refiner_type='imp') for _ in range(self.refiner_num)
+                ])
 
         self._gaussian_decoder = MODELS.build(config.gaussian_decoder)
 
