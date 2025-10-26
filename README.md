@@ -13,7 +13,8 @@
 
 - `Sep 18, 2025`: GaussianFusion has been accepted to NeurIPS 2025 (Spotlight).
 - `Oct 09, 2025`: The source code of GaussianFusion has been publicly released.
-
+- `Oct 26, 2025`: Update the implementation of V2-99 version.  
+- `Oct 26, 2025`: The checkpoint file of GaussianFusion has been uploaded.
 ---
 
 ## Table of Contents
@@ -107,6 +108,13 @@ Before starting evaluation, ensure that the metric cache is already prepared and
 ```bash
 bash ./scripts/evaluation/run_gaussianfusion.sh
 ```
+
+### 5. Results
+
+#### NAVSIM navtest
+|  Model  |   NC | DAC | TTC | EP | PDMS | ckpt |
+|---------|--------|--------|--------|--------|--------|--------|
+|  GaussianFusion (V2-99) |  98.6  | 98.6  | 95.2 | 89.7 | 92.6 | [ckpt](https://huggingface.co/Say2l/GaussianFusion) |
 
 ---
 

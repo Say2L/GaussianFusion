@@ -46,7 +46,7 @@ def run_test_evaluation(
         sensor_config=agent.get_sensor_config(),
     )
 
-    agent._checkpoint_path="/home/liush/iPad/exp/ke/navsim/07.07_23.07/lightning_logs/version_0/checkpoints/epoch19-step26580.ckpt"
+    agent._checkpoint_path=""
 
     agent.initialize()
 

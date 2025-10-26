@@ -19,12 +19,12 @@ def filter_lidar_pc(lidar_pc: npt.NDArray[np.float32]) -> npt.NDArray[np.float32
     pc = lidar_pc.T
     mask = (
         np.ones((len(pc)), dtype=bool)
-        & (pc[:, 0] > LIDAR_CONFIG["x_lim"][0])
-        & (pc[:, 0] < LIDAR_CONFIG["x_lim"][1])
-        & (pc[:, 1] > LIDAR_CONFIG["y_lim"][0])
-        & (pc[:, 1] < LIDAR_CONFIG["y_lim"][1])
-        & (pc[:, 2] > LIDAR_CONFIG["z_lim"][0])
-        & (pc[:, 2] < LIDAR_CONFIG["z_lim"][1])
+        & (pc[:, LidarIndex.X] > LIDAR_CONFIG["x_lim"][0])
+        & (pc[:, LidarIndex.X] < LIDAR_CONFIG["x_lim"][1])
+        & (pc[:, LidarIndex.Y] > LIDAR_CONFIG["y_lim"][0])
+        & (pc[:, LidarIndex.Y] < LIDAR_CONFIG["y_lim"][1])
+        & (pc[:, LidarIndex.Z] > LIDAR_CONFIG["z_lim"][0])
+        & (pc[:, LidarIndex.Z] < LIDAR_CONFIG["z_lim"][1])
     )
     pc = pc[mask]
     return pc.T
@@ -44,7 +44,7 @@ def get_lidar_pc_color(lidar_pc: npt.NDArray[np.float32], as_hex: bool = False) 
 
     else:
         if LIDAR_CONFIG["color_element"] == "distance":
-            color_intensities = np.linalg.norm(pc[:, slice(0, 2 + 1)], axis=-1)
+            color_intensities = np.linalg.norm(pc[:, LidarIndex.POSITION], axis=-1)
         else:
             color_element_map = {
                 "x": LidarIndex.X,

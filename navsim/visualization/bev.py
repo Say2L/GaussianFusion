@@ -17,10 +17,17 @@ from navsim.common.dataclasses import Frame, Annotations, Trajectory, Lidar
 from navsim.common.enums import BoundingBoxIndex, LidarIndex
 from navsim.planning.scenario_builder.navsim_scenario_utils import tracked_object_types
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
-from navsim.visualization.config import BEV_PLOT_CONFIG, MAP_LAYER_CONFIG, AGENT_CONFIG, LIDAR_CONFIG
+from navsim.visualization.config import (
+    BEV_PLOT_CONFIG,
+    MAP_LAYER_CONFIG,
+    AGENT_CONFIG,
+    LIDAR_CONFIG,
+)
 
 
-def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -> plt.Axes:
+def add_configured_bev_on_ax(
+    ax: plt.Axes, map_api: AbstractMap, frame: Frame
+) -> plt.Axes:
     """
     Adds birds-eye-view visualization optionally with map, annotations, or lidar
     :param ax: matplotlib ax object
@@ -41,7 +48,9 @@ def add_configured_bev_on_ax(ax: plt.Axes, map_api: AbstractMap, frame: Frame) -
     return ax
 
 
-def add_annotations_to_bev_ax(ax: plt.Axes, annotations: Annotations, add_ego: bool = True) -> plt.Axes:
+def add_annotations_to_bev_ax(
+    ax: plt.Axes, annotations: Annotations, add_ego: bool = True
+) -> plt.Axes:
     """
     Adds birds-eye-view visualization of annotations (ie. bounding boxes)
     :param ax: matplotlib ax object
@@ -54,12 +63,14 @@ def add_annotations_to_bev_ax(ax: plt.Axes, annotations: Annotations, add_ego: b
         agent_type = tracked_object_types[name_value]
 
         x, y, heading = (
-            box_value[0],
-            box_value[1],
-            box_value[6],
+            box_value[BoundingBoxIndex.X],
+            box_value[BoundingBoxIndex.Y],
+            box_value[BoundingBoxIndex.HEADING],
         )
         box_length, box_width, box_height = box_value[3], box_value[4], box_value[5]
-        agent_box = OrientedBox(StateSE2(x, y, heading), box_length, box_width, box_height)
+        agent_box = OrientedBox(
+            StateSE2(x, y, heading), box_length, box_width, box_height
+        )
 
         add_oriented_box_to_bev_ax(ax, agent_box, AGENT_CONFIG[agent_type])
 
@@ -69,7 +80,10 @@ def add_annotations_to_bev_ax(ax: plt.Axes, annotations: Annotations, add_ego: b
             vehicle_parameters=get_pacifica_parameters(),
         )
         add_oriented_box_to_bev_ax(
-            ax, car_footprint.oriented_box, AGENT_CONFIG[TrackedObjectType.EGO], add_heading=False
+            ax,
+            car_footprint.oriented_box,
+            AGENT_CONFIG[TrackedObjectType.EGO],
+            add_heading=False,
         )
     return ax
 
@@ -115,8 +129,12 @@ def add_map_to_bev_ax(ax: plt.Axes, map_api: AbstractMap, origin: StateSE2) -> p
         e = np.cos(origin.heading)
         xoff = -origin.x
         yoff = -origin.y
-        translated_geometry = affinity.affine_transform(geometry, [1, 0, 0, 1, xoff, yoff])
-        rotated_geometry = affinity.affine_transform(translated_geometry, [a, b, d, e, 0, 0])
+        translated_geometry = affinity.affine_transform(
+            geometry, [1, 0, 0, 1, xoff, yoff]
+        )
+        rotated_geometry = affinity.affine_transform(
+            translated_geometry, [a, b, d, e, 0, 0]
+        )
         return rotated_geometry
 
     for polygon_layer in polygon_layers:
@@ -126,8 +144,12 @@ def add_map_to_bev_ax(ax: plt.Axes, map_api: AbstractMap, origin: StateSE2) -> p
 
     for polyline_layer in polyline_layers:
         for map_object in map_object_dict[polyline_layer]:
-            linestring: LineString = _geometry_local_coords(map_object.baseline_path.linestring, origin)
-            add_linestring_to_bev_ax(ax, linestring, MAP_LAYER_CONFIG[SemanticMapLayer.BASELINE_PATHS])
+            linestring: LineString = _geometry_local_coords(
+                map_object.baseline_path.linestring, origin
+            )
+            add_linestring_to_bev_ax(
+                ax, linestring, MAP_LAYER_CONFIG[SemanticMapLayer.BASELINE_PATHS]
+            )
     return ax
 
 
@@ -142,8 +164,8 @@ def add_lidar_to_bev_ax(ax: plt.Axes, lidar: Lidar) -> plt.Axes:
     lidar_pc = filter_lidar_pc(lidar.lidar_pc)
     lidar_pc_colors = get_lidar_pc_color(lidar_pc, as_hex=True)
     ax.scatter(
-        lidar_pc[1],
-        lidar_pc[0],
+        lidar_pc[LidarIndex.Y],
+        lidar_pc[LidarIndex.X],
         c=lidar_pc_colors,
         alpha=LIDAR_CONFIG["alpha"],
         s=LIDAR_CONFIG["size"],
@@ -152,7 +174,9 @@ def add_lidar_to_bev_ax(ax: plt.Axes, lidar: Lidar) -> plt.Axes:
     return ax
 
 
-def add_trajectory_to_bev_ax(ax: plt.Axes, trajectory: Trajectory, config: Dict[str, Any]) -> plt.Axes:
+def add_trajectory_to_bev_ax(
+    ax: plt.Axes, trajectory: Trajectory, config: Dict[str, Any]
+) -> plt.Axes:
     """
     Add trajectory poses as lint to plot
     :param ax: matplotlib ax object
@@ -225,7 +249,9 @@ def add_oriented_box_to_bev_ax(
     return ax
 
 
-def add_polygon_to_bev_ax(ax: plt.Axes, polygon: Polygon, config: Dict[str, Any]) -> plt.Axes:
+def add_polygon_to_bev_ax(
+    ax: plt.Axes, polygon: Polygon, config: Dict[str, Any]
+) -> plt.Axes:
     """
     Adds shapely polygon to birds-eye-view visualization
     :param ax: matplotlib ax object
@@ -281,7 +307,9 @@ def add_polygon_to_bev_ax(ax: plt.Axes, polygon: Polygon, config: Dict[str, Any]
     return ax
 
 
-def add_linestring_to_bev_ax(ax: plt.Axes, linestring: LineString, config: Dict[str, Any]) -> plt.Axes:
+def add_linestring_to_bev_ax(
+    ax: plt.Axes, linestring: LineString, config: Dict[str, Any]
+) -> plt.Axes:
     """
     Adds shapely linestring (polyline) to birds-eye-view visualization
     :param ax: matplotlib ax object

@@ -162,7 +162,6 @@ def main(cfg: DictConfig) -> None:
         model=lightning_module,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
-        # ckpt_path="/home/liush/iPad/exp/ke/navsim/09.28_23.52/lightning_logs/version_0/checkpoints/epoch=15-step=21264.ckpt",
     )
 
 if __name__ == "__main__":

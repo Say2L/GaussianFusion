@@ -7,7 +7,7 @@ from PIL import ImageColor
 import matplotlib.pyplot as plt
 from pyquaternion import Quaternion
 
-from navsim.common.dataclasses import Camera, Lidar, Annotations
+from navsim.common.dataclasses import Camera, Lidar, Annotations, Trajectory
 from navsim.common.enums import LidarIndex, BoundingBoxIndex
 from navsim.visualization.config import AGENT_CONFIG
 from navsim.visualization.lidar import filter_lidar_pc, get_lidar_pc_color
@@ -48,7 +48,9 @@ def add_lidar_to_camera_ax(ax: plt.Axes, camera: Camera, lidar: Lidar) -> plt.Ax
         img_shape=(image_height, image_width),
     )
 
-    for (x, y), color in zip(pc_in_cam[pc_in_fov_mask], lidar_pc_colors[pc_in_fov_mask]):
+    for (x, y), color in zip(
+        pc_in_cam[pc_in_fov_mask], lidar_pc_colors[pc_in_fov_mask]
+    ):
         color = (int(color[0]), int(color[1]), int(color[2]))
         cv2.circle(image, (int(x), int(y)), 5, color, -1)
 
@@ -56,7 +58,9 @@ def add_lidar_to_camera_ax(ax: plt.Axes, camera: Camera, lidar: Lidar) -> plt.Ax
     return ax
 
 
-def add_annotations_to_camera_ax(ax: plt.Axes, camera: Camera, annotations: Annotations) -> plt.Axes:
+def add_annotations_to_camera_ax(
+    ax: plt.Axes, camera: Camera, annotations: Annotations
+) -> plt.Axes:
     """
     Adds camera image with bounding boxes on matplotlib ax object
     :param ax: matplotlib ax object
@@ -72,9 +76,9 @@ def add_annotations_to_camera_ax(ax: plt.Axes, camera: Camera, annotations: Anno
         camera.sensor2lidar_translation,
     )
     box_positions, box_dimensions, box_heading = (
-        boxes[:, slice(0, 2 + 1)],
-        boxes[:, slice(3, 5 + 1)],
-        boxes[:, 6],
+        boxes[:, BoundingBoxIndex.POSITION],
+        boxes[:, BoundingBoxIndex.DIMENSION],
+        boxes[:, BoundingBoxIndex.HEADING],
     )
     corners_norm = np.stack(np.unravel_index(np.arange(8), [2] * 3), axis=1)
     corners_norm = corners_norm[[0, 1, 3, 2, 4, 5, 7, 6]]
@@ -84,7 +88,9 @@ def add_annotations_to_camera_ax(ax: plt.Axes, camera: Camera, annotations: Anno
     corners += box_positions.reshape(-1, 1, 3)
 
     # Then draw project corners to image.
-    box_corners, corners_pc_in_fov = _transform_points_to_image(corners.reshape(-1, 3), camera.intrinsics)
+    box_corners, corners_pc_in_fov = _transform_points_to_image(
+        corners.reshape(-1, 3), camera.intrinsics
+    )
     box_corners = box_corners.reshape(-1, 8, 2)
     corners_pc_in_fov = corners_pc_in_fov.reshape(-1, 8)
     valid_corners = corners_pc_in_fov.any(-1)
@@ -93,6 +99,74 @@ def add_annotations_to_camera_ax(ax: plt.Axes, camera: Camera, annotations: Anno
     image = _plot_rect_3d_on_img(camera.image.copy(), box_corners, box_labels)
 
     ax.imshow(image)
+    return ax
+
+
+def add_trajectory_to_camera_ax(
+    ax: plt.Axes, camera: Camera, trajectory: Trajectory, image_shape, config
+) -> plt.Axes:
+    """
+    Adds camera image with bounding boxes on matplotlib ax object
+    :param ax: matplotlib ax object
+    :param camera: navsim camera dataclass
+    :param annotations: navsim annotations dataclass
+    :return: ax object with image
+    """
+
+    trajectory_points = _transform_trajectory_to_camera(
+        trajectory.poses[:, :2],
+        camera.sensor2lidar_rotation,
+        camera.sensor2lidar_translation,
+    )
+
+    # Then draw project corners to image.
+    # Determine image shape from parameter or camera image
+    if image_shape is None and hasattr(camera, "image") and camera.image is not None:
+        img_h, img_w = camera.image.shape[:2]
+    elif image_shape is not None:
+        img_h, img_w = image_shape
+    else:
+        # Fallback: do not clamp to image bounds
+        img_h, img_w = None, None
+
+    if img_h is not None and img_w is not None:
+        trajectory_points, points_in_fov = _transform_points_to_image(
+            trajectory_points.reshape(-1, 3),
+            camera.intrinsics,
+            image_shape=(img_h, img_w),
+        )
+    else:
+        trajectory_points, points_in_fov = _transform_points_to_image(
+            trajectory_points.reshape(-1, 3), camera.intrinsics
+        )
+
+    trajectory_points = trajectory_points[points_in_fov]
+
+    # Shift the trajectory so that its starting point lies at the bottom-center of the image
+    if (
+        trajectory_points.shape[0] > 0
+        and image_shape is None
+        and hasattr(camera, "image")
+        and camera.image is not None
+    ):
+        img_h, img_w = camera.image.shape[:2]
+        target = np.array([(img_w - 1) / 2.0, img_h - 1.0])
+        delta = target - trajectory_points[0, :2]
+        trajectory_points[:, 0] += delta[0]
+        trajectory_points[:, 1] += delta[1]
+        # Clamp to image bounds after shift to avoid overflow
+        trajectory_points[:, 0] = np.clip(trajectory_points[:, 0], 0, img_w - 1)
+        trajectory_points[:, 1] = np.clip(trajectory_points[:, 1], 0, img_h - 1)
+
+    _plot_trajectory_on_img(ax, trajectory_points, config)
+
+    # Ensure axes stay within image bounds so lines don't "blow up" the view
+    if img_h is not None and img_w is not None:
+        ax.set_xlim(0, img_w - 1)
+        # Invert y-axis to match image coordinates (origin at top-left)
+        ax.set_ylim(img_h - 1, 0)
+        ax.set_aspect("equal")
+
     return ax
 
 
@@ -111,11 +185,11 @@ def _transform_annotations_to_camera(
     """
 
     locs, rots = (
-        boxes[:, slice(0, 2 + 1)],
-        boxes[:, 6 :],
+        boxes[:, BoundingBoxIndex.POSITION],
+        boxes[:, BoundingBoxIndex.HEADING :],
     )
     dims_cam = boxes[
-        :, [3, 5, 4]
+        :, [BoundingBoxIndex.LENGTH, BoundingBoxIndex.HEIGHT, BoundingBoxIndex.WIDTH]
     ]  # l, w, h -> l, h, w
 
     rots_cam = np.zeros_like(rots)
@@ -137,7 +211,40 @@ def _transform_annotations_to_camera(
     return np.concatenate([locs_cam, dims_cam, rots_cam], -1)
 
 
-def _rotation_3d_in_axis(points: npt.NDArray[np.float32], angles: npt.NDArray[np.float32], axis: int = 0):
+def _transform_trajectory_to_camera(
+    poses: npt.NDArray[np.float32],
+    sensor2lidar_rotation: npt.NDArray[np.float32],
+    sensor2lidar_translation: npt.NDArray[np.float32],
+) -> npt.NDArray[np.float32]:
+    """
+    Helper function to transform bounding boxes into camera frame
+    TODO: Refactor
+    :param boxes: array representation of bounding boxes
+    :param sensor2lidar_rotation: camera rotation
+    :param sensor2lidar_translation: camera translation
+    :return: bounding boxes in camera coordinates
+    """
+
+    lidar2cam_r = np.linalg.inv(sensor2lidar_rotation)
+    lidar2cam_t = sensor2lidar_translation @ lidar2cam_r.T
+    lidar2cam_rt = np.eye(4)
+    lidar2cam_rt[:3, :3] = lidar2cam_r.T
+    lidar2cam_rt[3, :3] = -lidar2cam_t
+
+    poses = np.concatenate([np.zeros_like(poses[:1]), poses], axis=0)
+
+    locs_cam = np.concatenate(
+        [poses, np.zeros_like(poses)[:, :1], np.ones_like(poses)[:, :1]], -1
+    )  # -1, 4
+    locs_cam = lidar2cam_rt.T @ locs_cam.T
+    locs_cam = locs_cam.T
+    locs_cam = locs_cam[:, :-1]
+    return locs_cam
+
+
+def _rotation_3d_in_axis(
+    points: npt.NDArray[np.float32], angles: npt.NDArray[np.float32], axis: int = 0
+):
     """
     Rotate 3D points by angles according to axis.
     TODO: Refactor
@@ -181,6 +288,22 @@ def _rotation_3d_in_axis(points: npt.NDArray[np.float32], angles: npt.NDArray[np
     return np.einsum("aij,jka->aik", points, rot_mat_T)
 
 
+def _plot_trajectory_on_img(ax: plt.Axes, poses, config) -> npt.NDArray[np.uint8]:
+    ax.plot(
+        poses[:, 0],
+        poses[:, 1],
+        color=config["line_color"],
+        alpha=config["line_color_alpha"],
+        linewidth=config["line_width"],
+        linestyle=config["line_style"],
+        marker=config["marker"],
+        markersize=config["marker_size"],
+        markeredgecolor=config["marker_edge_color"],
+        zorder=config["zorder"],
+    )
+    return ax
+
+
 def _plot_rect_3d_on_img(
     image: npt.NDArray[np.float32],
     box_corners: npt.NDArray[np.float32],
@@ -213,7 +336,7 @@ def _plot_rect_3d_on_img(
     for i in range(len(box_corners)):
         layer = tracked_object_types[box_labels[i]]
         color = ImageColor.getcolor(AGENT_CONFIG[layer]["fill_color"], "RGB")
-        corners = box_corners[i].astype(np.int)
+        corners = box_corners[i]
         for start, end in line_indices:
             cv2.line(
                 image,
@@ -251,7 +374,9 @@ def _transform_points_to_image(
     pc_img = pc_img.T
 
     cur_pc_in_fov = pc_img[:, 2] > eps
-    pc_img = pc_img[..., 0:2] / np.maximum(pc_img[..., 2:3], np.ones_like(pc_img[..., 2:3]) * eps)
+    pc_img = pc_img[..., 0:2] / np.maximum(
+        pc_img[..., 2:3], np.ones_like(pc_img[..., 2:3]) * eps
+    )
     if image_shape is not None:
         img_h, img_w = image_shape
         cur_pc_in_fov = (
@@ -283,7 +408,7 @@ def _transform_pcs_to_images(
     :param eps: threshold for lidar pc height, defaults to 1e-3
     :return: lidar pc in pixel coordinates, mask of values in frame
     """
-    pc_xyz = lidar_pc[slice(0, 2 + 1), :].T
+    pc_xyz = lidar_pc[LidarIndex.POSITION, :].T
 
     lidar2cam_r = np.linalg.inv(sensor2lidar_rotation)
     lidar2cam_t = sensor2lidar_translation @ lidar2cam_r.T
@@ -299,7 +424,9 @@ def _transform_pcs_to_images(
     cur_pc_cam = lidar2img_rt @ cur_pc_xyz.T
     cur_pc_cam = cur_pc_cam.T
     cur_pc_in_fov = cur_pc_cam[:, 2] > eps
-    cur_pc_cam = cur_pc_cam[..., 0:2] / np.maximum(cur_pc_cam[..., 2:3], np.ones_like(cur_pc_cam[..., 2:3]) * eps)
+    cur_pc_cam = cur_pc_cam[..., 0:2] / np.maximum(
+        cur_pc_cam[..., 2:3], np.ones_like(cur_pc_cam[..., 2:3]) * eps
+    )
 
     if img_shape is not None:
         img_h, img_w = img_shape

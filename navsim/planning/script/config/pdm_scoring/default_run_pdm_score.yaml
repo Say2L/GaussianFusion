@@ -22,5 +22,5 @@ dataloader:
     pin_memory: true  # pin memory for faster GPU transfer
     prefetch_factor: 2  # number of samples loaded in advance by each worker
 
-metric_cache_path: /home/liush/iPad/exp/metric_cache # path to metric cache
+metric_cache_path: ${oc.env:NAVSIM_EXP_ROOT}/metric_cache # path to metric cache
 force_cache_computation: false
