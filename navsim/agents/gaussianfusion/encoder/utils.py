@@ -8,6 +8,15 @@ import torch.nn.functional as F
 SIGMOID_MAX = 9.21024
 LOGIT_MAX = 0.9999
 
+def dict_to_gpu(input):
+    if not isinstance(input, dict):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        input = input.to(device)
+        return input
+
+    for k, v in input.items():
+        input[k] = dict_to_gpu(v)
+    return input
 
 def safe_sigmoid(tensor):
     tensor = torch.clamp(tensor, -9.21, 9.21)

@@ -28,8 +28,11 @@ class GaussianFusionConfig:
 
     num_poses: int = 8
     command_num: int= 4
+    ####### image backbone #######
+    img_backbone = "v299"
+    vov_ckpt = "/home/liush/GaussianFusion/pretrained/dd3d_det_final.pth"
     ####### lidar backbone #######
-    embed_dims = 256
+    embed_dims = 512
     lidar_backbone = dict(
         # type="ResNet",
         depth=34,

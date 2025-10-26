@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from mmdet.models.necks.fpn import FPN
 from mmdet.models.backbones import ResNet
+from navsim.agents.gaussianfusion.encoder.vov import VoVNet
 from .grid_mask import GridMask
 from ..gaussianfusion_config import GaussianFusionConfig
 
@@ -19,19 +20,38 @@ class SensorBackbone(nn.Module):
 
         self.grid_mask = GridMask( True, True, rotate=1, offset=False, ratio=0.5, mode=1, prob=0.7)
         self.use_grid_mask = True
-
-        self.img_backbone = timm.create_model("resnet34", pretrained=True, features_only=True )
-        
         self.num_outs=num_feature_levels
-
-        self.img_neck=FPN(
-            in_channels=[64,128,256,512][-self.num_outs:],
-            out_channels=_dim_,
-            start_level=0,
-            add_extra_convs='on_output',
-            num_outs=self.num_outs,
-            relu_before_extra_convs=True
-        )
+        if config.img_backbone == "resnet34":
+            self.img_backbone = timm.create_model("resnet34", pretrained=True, features_only=True )
+            self.img_neck=FPN(
+                in_channels=[64,128,256,512][-self.num_outs:],
+                out_channels=_dim_,
+                start_level=0,
+                add_extra_convs='on_output',
+                num_outs=self.num_outs,
+                relu_before_extra_convs=True
+            )
+        elif config.img_backbone == "v299":
+            self.img_backbone = VoVNet(
+                spec_name='V-99-eSE',
+                out_features=['stage3', 'stage4', 'stage5'],
+                norm_eval=True,
+                with_cp=True,
+                init_cfg=dict(
+                    type='Pretrained',
+                    checkpoint=config.vov_ckpt,
+                    prefix='img_backbone.'
+                )
+            )
+            self.img_backbone.init_weights()
+            self.img_neck = FPN(
+                in_channels=[512, 768, 1024][-self.num_outs:], # [64,128,256,512]
+                out_channels=_dim_,
+                start_level=0,
+                add_extra_convs='on_output',
+                num_outs=self.num_outs,
+                relu_before_extra_convs=True
+            )
         self.level_embeds = nn.Parameter(torch.randn(self.num_feature_levels, self.embed_dims))
         self.cams_embeds = nn.Parameter(
             torch.randn([self.num_cams, self.embed_dims]))

@@ -142,12 +142,12 @@ class GaussianDecoder(BaseModule):
             bs, g = means.shape[:2]
 
             semantics = self.aggregator(
-                sampled_xyz,
-                means,
-                origi_opa.reshape(bs, g),
-                opacities,
-                scales,
-                CovInv,
+                sampled_xyz.float(),
+                means.float(),
+                origi_opa.reshape(bs, g).float(),
+                opacities.float(),
+                scales.float(),
+                CovInv.float(),
             )  # 1, c, n
             if self.use_localaggprob:
                 semantic = semantics[0]

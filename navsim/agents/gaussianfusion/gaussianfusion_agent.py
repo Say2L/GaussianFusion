@@ -14,11 +14,12 @@ from navsim.agents.abstract_agent import AbstractAgent
 from navsim.planning.training.dataset import load_feature_target_from_pickle
 from pytorch_lightning.callbacks import ModelCheckpoint
 from navsim.common.dataloader import MetricCacheLoader
-from navsim.common.dataclasses import SensorConfig
+from navsim.common.dataclasses import SensorConfig, Trajectory
 from navsim.agents.gaussianfusion.gaussianfusion_model import GaussianFusionModel
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionTargetBuilder
 from navsim.agents.gaussianfusion.gaussianfusion_features import GaussianFusionFeatureBuilder
 from navsim.agents.gaussianfusion.gaussianfusion_config import GaussianFusionConfig
+from navsim.agents.gaussianfusion.encoder.utils import dict_to_gpu
 from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR
 from navsim.agents.gaussianfusion.gaussianfusion_loss import _bev_occ_loss
 from navsim.agents.gaussianfusion.modules.scheduler import WarmupCosLR
@@ -205,6 +206,33 @@ class GaussianFusionAgent(AbstractAgent):
         """
         return self._gaussianfusion_model(features, targets)
 
+    def compute_trajectory(self, scene):
+       
+        self.eval()
+        features: Dict[str, torch.Tensor] = {}
+        targets: Dict[str, torch.Tensor] = {}
+        # build features
+        for builder in self.get_feature_builders():
+            features.update(builder.compute_features(scene.get_agent_input()))
+
+        for builder in self.get_target_builders():
+            targets.update(builder.compute_targets(scene))
+
+        targets.pop("token")
+        # add batch dimension
+        features = {k: v.unsqueeze(0) for k, v in features.items()}
+        targets = {k: v.unsqueeze(0) if isinstance(v, torch.Tensor) else v for k, v in targets.items()}
+
+        features = dict_to_gpu(features)
+        targets = dict_to_gpu(targets)
+        # forward pass
+        with torch.no_grad():
+            predictions = self.forward(features, targets)
+            poses = predictions["trajectory"].squeeze(0).cpu().numpy()
+
+        # extract trajectory
+        return Trajectory(poses)
+    
     def compute_score(self, targets, proposals, test=True):
         """
         Compute safety and feasibility scores for trajectory proposals.
