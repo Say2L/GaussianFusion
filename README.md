@@ -2,6 +2,7 @@
 <div align="center">
   <h1>Gaussian-Based Multi-Sensor Fusion for End-to-End Autonomous Driving</h1>
   <!-- <h3>Gaussian-Based Multi-Sensor Fusion for End-to-End Autonomous Driving</h3> -->
+  <p><a href="https://arxiv.org/abs/2506.00034">📄 Paper on arXiv</a></p>
   <p>Shuai Liu, Quanmin Liang, Zefeng Li, Boyang Li, Kai Huang</p>
   <p>School of Computer Science and Engineering, Sun Yat-sen University</p>
   <p><i>Contact: liush376@mail2.sysu.edu.cn, liby83@mail.sysu.edu.cn, huangk36@mail.sysu.edu.cn</i></p>
