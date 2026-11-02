@@ -93,9 +93,9 @@ class GaussianFusionAgent(AbstractAgent):
         """
         if self._checkpoint_path != "":
             if torch.cuda.is_available():
-                state_dict: Dict[str, Any] = torch.load(self._checkpoint_path)["state_dict"]
+                state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, weights_only=True)["state_dict"]
             else:
-                state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"))[
+                state_dict: Dict[str, Any] = torch.load(self._checkpoint_path, map_location=torch.device("cpu"), weights_only=True)[
                     "state_dict"]
             # Load weights with key mapping for compatibility
             state_dict = {k.replace("agent._gaussianfusion_model", "_gaussianfusion_model"): v for k, v in state_dict.items()}
